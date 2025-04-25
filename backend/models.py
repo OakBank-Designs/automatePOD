@@ -1,9 +1,9 @@
 # backend/models.py
 from typing import Optional, List
 from datetime import datetime
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field, Relationship # type: ignore
 from typing      import Optional
-from sqlalchemy  import Column, JSON
+from sqlalchemy  import Column, JSON # type: ignore
 
 
 class User(SQLModel, table=True):

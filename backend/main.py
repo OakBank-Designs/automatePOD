@@ -3,7 +3,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from db import init_db, get_session
-from sqlmodel import Session
+from sqlmodel import Session # type: ignore
 from api.product_routes  import router as product_router
 
 #from backend.api.printify_routes import router as printify_router

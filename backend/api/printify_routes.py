@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Body
 from typing import Any
 import os
-import httpx
+import httpx # type: ignore
 
-from sqlmodel import Session
+from sqlmodel import Session # type: ignore
 from db import get_session
 from models import Product
 from services.printify_service import get_printify_catalog

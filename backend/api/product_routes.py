@@ -1,6 +1,6 @@
 # backend/api/product_routes.py
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session, select
+from sqlmodel import Session, select # type: ignore
 from typing import List
 
 from db import get_session
