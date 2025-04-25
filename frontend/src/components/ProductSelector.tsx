@@ -1,6 +1,6 @@
 // src/components/ProductSelector.tsx
 import { useEffect, useState } from 'react'
-import axios from '../api'
+import axios from '../api' // Adjusted the path to match the likely correct location
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 
 interface Product {

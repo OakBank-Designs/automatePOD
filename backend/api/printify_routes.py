@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from backend.services.printify_service import get_printify_catalog
+from services.printify_service import get_printify_catalog
 
 
 router = APIRouter(prefix="/printify", tags=["Printify"])

@@ -1,4 +1,4 @@
-import httpx
+import httpx # type: ignore
 import os
 from dotenv import load_dotenv
 
