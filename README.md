@@ -13,3 +13,4 @@ chmod +x setup_dev.sh
 ./setup_dev.sh automatePOD
 docker-compose up --build
 ```
+# automatePOD
