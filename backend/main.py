@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 #from backend.api.printify_routes import router as printify_router
 from api.printify_routes import router as printify_router
+from api.niche_routes import router as niche_router
 
 load_dotenv()  
 app = FastAPI()
@@ -25,3 +26,4 @@ app.add_middleware(
 )
 
 app.include_router(printify_router)
+app.include_router(niche_router)

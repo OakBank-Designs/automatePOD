@@ -16,6 +16,7 @@
     "postcss-cli": "^11.0.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-router-dom": "^6.30.0",
     "tailwindcss": "^4.1.4"
   },
   "devDependencies": {
@@ -23,6 +24,7 @@
     "@tailwindcss/postcss": "^4.1.4",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
+    "@types/react-router-dom": "^5.3.3",
     "@vitejs/plugin-react": "^4.4.1",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.22.0",
