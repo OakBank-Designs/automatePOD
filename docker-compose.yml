@@ -1,16 +1,21 @@
+version: "3.8"
 services:
   backend:
     build: ./backend
     container_name: zeus-backend
     ports:
       - "8000:8000"
-    volumes:
-      - ./backend:/app
+    
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     env_file:
       - .env
       - backend/.env
-
+    environment:
+      - DATABASE_URL=sqlite:///./dev.db
+    volumes:
+      - ./backend:/app:cached    # keep code bind-mount
+      - ./backend/dev.db:/app/dev.db  # persist DB file
+      
   frontend:
     build: ./frontend
     env_file:
@@ -23,6 +28,7 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+   
     #command: npm run dev
     #command: nom run dev -- --host 0.0.0.0
     command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
