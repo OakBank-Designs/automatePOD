@@ -1,5 +1,5 @@
 # backend/models.py
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 from sqlmodel import SQLModel, Field, Relationship # type: ignore
 from typing      import Optional
@@ -62,3 +62,29 @@ class Niche(SQLModel, table=True):
                                       description="Parent niche ID, if this is a sub-niche")
     user_id:    Optional[int] = Field(default=None, foreign_key="user.id",
                                       description="ID of the user who selected this niche")
+
+
+# Template models
+class TemplateBase(SQLModel):
+    name: str = Field(..., description="Name of the template")
+    products: Optional[Any] = Field(
+      default=None,
+      sa_column=Column("products", JSON, nullable=True),
+      description="List of product blueprint IDs"
+    )
+    variants: Optional[Any] = Field(
+      default=None,
+      sa_column=Column("variants", JSON, nullable=True),
+      description="Map of blueprint ID to variant ID list"
+    )
+
+class Template(TemplateBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", description="Owner user ID")
+
+class TemplateCreate(TemplateBase):
+    user_id: int = Field(..., description="Owner user ID")
+
+class TemplateRead(TemplateBase):
+    id: int
+    user_id: int

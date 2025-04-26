@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
+//import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   // no root: setting — let Vite use the default (the directory containing index.html)
@@ -10,19 +10,34 @@ export default defineConfig({
     host: true,               // bind to 0.0.0.0
     port: 5173,
     proxy: {
-      '/niches': 'http://localhost:8000',
-      '/products': 'http://localhost:8000',
-      '/printify': 'http://localhost:8000',
-      // etc.
-    }
+      '/printify': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/templates': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/niches': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/products': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/designs': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+    },
   },
   build: {
-    outDir: 'dist',           // will emit frontend/dist
+    outDir: 'dist',
     emptyOutDir: true,
   },
   plugins: [
     react(),
-    tailwindcss(),
+    // tailwindcss(),
   ],
-  
 })

@@ -1,4 +1,3 @@
-version: "3.8"
 services:
   backend:
     build: ./backend
@@ -11,10 +10,10 @@ services:
       - .env
       - backend/.env
     environment:
-      - DATABASE_URL=sqlite:///./dev.db
+      - DATABASE_URL=sqlite:////data/dev.db
     volumes:
       - ./backend:/app:cached    # keep code bind-mount
-      - ./backend/dev.db:/app/dev.db  # persist DB file
+      - db-data:/data  # persist DB file
       
   frontend:
     build: ./frontend
@@ -26,9 +25,11 @@ services:
     ports:
       - "5173:5173"
     volumes:
-      - ./frontend:/app
+      - ./frontend:/app:delegated
       - /app/node_modules
    
-    #command: npm run dev
-    #command: nom run dev -- --host 0.0.0.0
-    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+    #command: npm run dev -- --host 0.0.0.0
+    command: ["sh", "-c", "npm rebuild rollup && npm run dev -- --host 0.0.0.0"]
+
+volumes:
+  db-data:

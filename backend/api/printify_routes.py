@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Body
-from typing import Any
+from typing import Any, List
 import os
 import httpx # type: ignore
 
@@ -11,7 +11,6 @@ from services.printify_service import get_printify_catalog
 router = APIRouter(prefix="/printify", tags=["Printify"])
 
 from pydantic import BaseModel
-from typing   import List
 
 class Shop(BaseModel):
     id:    int
@@ -77,8 +76,12 @@ async def upload_image(
     return resp.json()
 
 @router.get("/catalog")
-def fetch_catalog():
-    return {"products": get_printify_catalog()}
+async def get_catalog():
+    return await get_printify_catalog()
+
+@router.get("/catalog/{product_id}/variants")
+async def get_variants(product_id: int):
+    return await get_printify_catalog(product_id)
 
 @router.post("/create", status_code=status.HTTP_201_CREATED, response_model=Any)
 async def create_printify_product(
