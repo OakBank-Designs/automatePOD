@@ -9,6 +9,12 @@ export default defineConfig({
   server: {
     host: true,               // bind to 0.0.0.0
     port: 5173,
+    proxy: {
+      '/niches': 'http://localhost:8000',
+      '/products': 'http://localhost:8000',
+      '/printify': 'http://localhost:8000',
+      // etc.
+    }
   },
   build: {
     outDir: 'dist',           // will emit frontend/dist
@@ -18,4 +24,5 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  
 })

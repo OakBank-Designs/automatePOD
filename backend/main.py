@@ -5,6 +5,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from db import init_db, get_session
 from sqlmodel import Session # type: ignore
 from api.product_routes  import router as product_router
+from api.niche_routes import router as niche_router
+from models import Niche
+from models import Product, User 
+
 
 #from backend.api.printify_routes import router as printify_router
 from api.printify_routes import router as printify_router

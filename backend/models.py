@@ -51,3 +51,14 @@ class Metadata(SQLModel, table=True):
     description: str
     tags: str  # e.g. comma-separated
     design: Optional[Design] = Relationship(back_populates="metadata_items")
+
+class Niche(SQLModel, table=True):
+    """
+    A printable product niche or sub-niche selected by the user.
+    """
+    id:         Optional[int] = Field(default=None, primary_key=True)
+    name:       str           = Field(..., description="Niche or sub-niche name")
+    parent_id:  Optional[int] = Field(default=None, foreign_key="niche.id",
+                                      description="Parent niche ID, if this is a sub-niche")
+    user_id:    Optional[int] = Field(default=None, foreign_key="user.id",
+                                      description="ID of the user who selected this niche")

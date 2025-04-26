@@ -1,57 +1,100 @@
 // frontend/src/components/NicheSelector.tsx
 import { useState } from 'react'
+import axios from 'axios'
+import { useNavigate } from 'react-router-dom'
 
-interface Props {
-  onSelect: (niche: string) => void
-}
-
-export default function NicheSelector({ onSelect }: Props) {
-  const [input, setInput] = useState('')
+export default function NicheSelector() {
+  const [productType, setProductType] = useState('')
   const [suggestions, setSuggestions] = useState<string[]>([])
-  const [loading, setLoading] = useState(false)
+  const [chosen, setChosen] = useState<string>('')
+  const [isLoading, setIsLoading] = useState(false)
+  const navigate = useNavigate()
+  const [error, setError] = useState<string|null>(null);
 
+  // Fetch AI suggestions
   const fetchSuggestions = async () => {
-    setLoading(true)
-    const res = await fetch('/api/niches/suggest', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: input })
-    })
-    const data = await res.json()
-    setSuggestions(data.suggestions || [])
-    setLoading(false)
+    if (!productType.trim()) return
+    setIsLoading(true)
+    try {
+      const res = await axios.post('/niches/suggest', { product_type: productType })
+      setSuggestions(res.data.suggestions)
+    } catch (err: any) {
+        console.error(err) 
+        setError(err.response?.data?.detail || err.message || 'Unknown error')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Save the chosen niche
+  const chooseNiche = async (name: string) => {
+    try {
+      // assuming user_id is 1 for now; swap with real auth ID as needed
+      const res = await axios.post('/niches/choose', { name, user_id: 1 })
+      console.log('Niche saved:', res.data)
+      // navigate to next step, e.g. design generator
+      navigate('/design')
+    } catch (err) {
+      console.error(err)
+      alert('Error saving niche')
+    }
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex space-x-2">
+    <div className="max-w-lg mx-auto p-4 space-y-4">
+      <h2 className="text-2xl font-semibold">Step 2: Pick a Niche</h2>
+
+      <div>
+        <label className="block mb-1">Product Type</label>
         <input
           type="text"
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          placeholder="Enter a broad niche (e.g. fitness, pets…)"
-          className="flex-1 px-3 py-2 border rounded"
+          value={productType}
+          onChange={e => setProductType(e.target.value)}
+          placeholder="e.g. T-Shirt"
+          className="w-full border rounded px-3 py-2"
+        />
+      </div>
+
+      <button
+        onClick={fetchSuggestions}
+        disabled={isLoading || !productType.trim()}
+        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+      >
+        {isLoading ? 'Loading…' : 'Get AI Suggestions'}
+      </button>
+
+      {suggestions.length > 0 && (
+        <ul className="space-y-2">
+          {suggestions.map((s, i) => (
+            <li key={i}>
+              <button
+                onClick={() => chooseNiche(s)}
+                className="block w-full text-left border rounded px-3 py-2 hover:bg-gray-100"
+              >
+                {s}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="mt-6">
+        <label className="block mb-1">Or enter your own niche</label>
+        <input
+          type="text"
+          value={chosen}
+          onChange={e => setChosen(e.target.value)}
+          placeholder="e.g. Fitness"
+          className="w-full border rounded px-3 py-2"
         />
         <button
-          onClick={fetchSuggestions}
-          disabled={loading || !input.trim()}
-          className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
+          onClick={() => chooseNiche(chosen)}
+          disabled={!chosen.trim()}
+          className="mt-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
         >
-          {loading ? 'Loading…' : 'Suggest'}
+          Save Niche
         </button>
       </div>
-      <ul className="space-y-1">
-        {suggestions.map((s, i) => (
-          <li key={i}>
-            <button
-              onClick={() => onSelect(s)}
-              className="text-left px-3 py-1 hover:bg-gray-100 w-full rounded"
-            >
-              {s}
-            </button>
-          </li>
-        ))}
-      </ul>
     </div>
-  )
+)
 }
