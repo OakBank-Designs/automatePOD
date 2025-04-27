@@ -1,7 +1,12 @@
-axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+axios.defaults.baseURL = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}`
+  : 'http://localhost:8000'
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Wand2 } from 'lucide-react';
+import { Image as ImageIcon } from 'lucide-react';
+import { Info } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { Dialog } from '@headlessui/react';
 
 
@@ -31,11 +36,21 @@ export default function CreateProduct() {
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<{ id: number; title: string } | null>(null);
   const [filter, setFilter] = useState('');
+  const [categories, setCategories] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  // State for product detail modal
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [detailProduct, setDetailProduct] = useState<{ id: number; title: string; [key: string]: any } | null>(null);
+
+  // Image carousel state
+  const [isImageCarouselOpen, setIsImageCarouselOpen] = useState(false);
+  const [carouselImages, setCarouselImages] = useState<string[]>([]);
+  const [carouselIndex, setCarouselIndex] = useState(0);
 
   async function fetchNicheSuggestions() {
     try {
       const productTitle = catalog.find(c => c.id === blueprintId)?.title || '';
-      const res = await axios.post('/niches/suggest', { product_type: productTitle });
+      const res = await axios.post('niches/suggest', { product_type: productTitle });
       setSuggestions(res.data.suggestions || []);
     } catch (err) {
       console.error(err);
@@ -48,12 +63,17 @@ export default function CreateProduct() {
   const [tags, setTags] = useState('');
 
   // Fetch Printify catalog on mount
+  // Image loading state for catalog thumbnails
+  const [loadingImages, setLoadingImages] = useState<{ [key: number]: boolean }>({});
   useEffect(() => {
     async function loadCatalog() {
       try {
-        const res = await axios.get('/printify/catalog');
-        const data = Array.isArray(res.data) ? res.data : [];
-        setCatalog(data);
+        const res = await axios.get('printify/catalog');
+        const raw = Array.isArray(res.data) ? res.data : [];
+        // Temporarily disable AI classification; assign all items to 'Other'
+        const categorized = raw.map(item => ({ ...item, category: 'Other' }));
+        setCatalog(categorized);
+        setCategories(Array.from(new Set(categorized.map(item => item.category))));
       } catch (err) {
         console.error('Failed to load catalog', err);
         setCatalog([]);
@@ -66,7 +86,7 @@ export default function CreateProduct() {
   useEffect(() => {
     async function loadTemplates() {
       try {
-        const res = await axios.get('/templates');
+        const res = await axios.get('templates');
         // Ensure we have an array
         const data = Array.isArray(res.data) ? res.data : res.data.templates ?? [];
         setTemplates(data);
@@ -96,7 +116,7 @@ export default function CreateProduct() {
       const variantsMap: { [productId: number]: { id: number; title: string }[] } = {};
       for (const productId of selectedProducts) {
         try {
-          const res = await axios.get(`/printify/catalog/${productId}/variants`);
+          const res = await axios.get(`printify/catalog/${productId}/variants`);
           variantsMap[productId] = res.data || [];
         } catch (err) {
           console.error(err);
@@ -252,14 +272,17 @@ export default function CreateProduct() {
             <button
               type="button"
               onClick={() => setIsCatalogOpen(true)}
-              className="w-full border border-gray-300 rounded-md p-2 text-left hover:bg-gray-50"
+              className="w-full border border-gray-300 rounded-md p-2 text-left hover:bg-gray-50 flex flex-wrap gap-2"
             >
-              {selectedProduct?.title || "Select a product…"}
+              {selectedProducts.length > 0
+                ? selectedProducts
+                    .map(id => catalog.find(c => c.id === id)?.title)
+                    .filter(Boolean)
+                    .join(', ')
+                : "Select products…"}
             </button>
           </div>
-
-
-          <div>
+           <div>
             <label className="block mb-1">Style Preferences</label>
             <input
               type="text"
@@ -293,33 +316,208 @@ export default function CreateProduct() {
       {/* Catalog selection modal */}
       <Dialog open={isCatalogOpen} onClose={() => setIsCatalogOpen(false)}>
         <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
-        <div className="fixed inset-y-0 right-0 w-full sm:w-3/4 md:w-1/2 bg-white p-6 overflow-auto">
-          <Dialog.Title className="text-xl font-semibold mb-4">Pick a product</Dialog.Title>
+        <div className="fixed inset-y-0 right-0 w-full sm:w-3/4 md:w-1/2 bg-white p-6 overflow-auto rounded-l-lg shadow-xl transform transition-transform duration-300">
+          <Dialog.Title className="text-2xl font-semibold mb-4 flex justify-between items-center">
+            <span>Pick a Product</span>
+            <span className="text-sm text-gray-600">{selectedProducts.length} selected</span>
+          </Dialog.Title>
+          <div className="mb-4 flex space-x-2 overflow-auto">
+            <button
+              type="button"
+              className={`px-3 py-1 rounded-md ${selectedCategory === '' ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}
+              onClick={() => setSelectedCategory('')}
+            >
+              All
+            </button>
+            {categories.map(cat => (
+              <button
+                key={cat}
+                type="button"
+                className={`px-3 py-1 rounded-md ${selectedCategory === cat ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}
+                onClick={() => setSelectedCategory(cat)}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
           <input
             type="text"
             placeholder="Search…"
             value={filter}
             onChange={e => setFilter(e.target.value)}
-            className="mb-4 w-full border border-gray-300 rounded-md p-2"
+            className="mb-6 w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-indigo-200"
           />
-          <ul className="space-y-2">
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {catalog
-              .filter(c => c.title.toLowerCase().includes(filter.toLowerCase()))
-              .map(item => (
-                <li key={item.id} className="flex justify-between items-center">
-                  <span>{item.title}</span>
-                  <button
-                    onClick={() => {
-                      setSelectedProduct(item);
-                      setIsCatalogOpen(false);
-                    }}
-                    className="text-indigo-600 hover:underline"
-                  >
-                    Select
-                  </button>
-                </li>
-              ))}
+              .filter(c =>
+                (!selectedCategory || (c as any).category === selectedCategory) &&
+                c.title.toLowerCase().includes(filter.toLowerCase())
+              )
+              .map(item => {
+                const isSelected = selectedProducts.includes(item.id);
+                let imgSrc: string | undefined = undefined;
+                const anyItem = item as any;
+                if (anyItem.image_url) imgSrc = anyItem.image_url;
+                else if (anyItem.image) imgSrc = anyItem.image;
+                else if (Array.isArray(anyItem.images) && anyItem.images.length > 0) {
+                  const firstImage = anyItem.images[0];
+                  imgSrc = typeof firstImage === 'string' ? firstImage : firstImage?.src;
+                }
+                return (
+                  <li key={item.id} className="bg-white border border-gray-200 rounded-lg shadow hover:shadow-lg transition p-4 flex items-center space-x-4">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleProduct(item.id)}
+                      className="h-5 w-5 text-indigo-600"
+                    />
+                    <div className="relative w-16 h-16">
+                      {loadingImages[item.id] && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-indigo-600"></div>
+                        </div>
+                      )}
+                      <img
+                        src={imgSrc || '/placeholder.png'}
+                        alt={item.title}
+                        className="w-16 h-16 object-cover rounded"
+                        loading="lazy"
+                        onLoad={() => setLoadingImages(prev => ({ ...prev, [item.id]: false }))}
+                        onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = '/placeholder.png'; setLoadingImages(prev => ({ ...prev, [item.id]: false })); }}
+                        onLoadStart={() => setLoadingImages(prev => ({ ...prev, [item.id]: true }))}
+                      />
+                    </div>
+                    <span className="flex-1 font-medium">{item.title}</span>
+                    <button
+                      type="button"
+                      className="text-indigo-600 hover:underline"
+                      onClick={() => {
+                        setDetailProduct(item);
+                        setIsDetailOpen(true);
+                      }}
+                    >
+                      Details
+                    </button>
+                  </li>
+                );
+              })}
           </ul>
+          <button
+            type="button"
+            onClick={() => setIsCatalogOpen(false)}
+            className="mt-6 bg-indigo-600 text-white px-5 py-3 rounded-md hover:bg-indigo-700 transition"
+          >
+            Done
+          </button>
+        </div>
+      </Dialog>
+
+      {/* Product Detail Modal */}
+      <Dialog open={isDetailOpen} onClose={() => setIsDetailOpen(false)}>
+        <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6">
+            <Dialog.Title className="text-xl font-semibold mb-4">
+              {detailProduct?.title}
+            </Dialog.Title>
+            {/* Display any additional fields */}
+            <div className="space-y-4">
+              {detailProduct && Object.entries(detailProduct).map(([key, value]) => {
+                // Skip id and title
+                if (key === 'id' || key === 'title') return null;
+
+                // Render description HTML
+                if (key === 'description') {
+                  return (
+                    <div key={key}>
+                      <strong className="capitalize">{key.replace(/_/g, ' ')}:</strong>
+                      <div
+                        className="mt-1 prose"
+                        dangerouslySetInnerHTML={{ __html: String(value) }}
+                      />
+                    </div>
+                  );
+                }
+
+                // Render images as thumbnails
+                if (['image_url', 'image', 'images'].includes(key)) {
+                  const urls = Array.isArray(value) ? value : [String(value)];
+                  return (
+                    <div key={key}>
+                      <strong className="capitalize">{key.replace(/_/g, ' ')}:</strong>
+                      <div className="mt-1 flex space-x-2">
+                        {urls.map((url, i) => (
+                          <img
+                            key={i}
+                            src={url}
+                            alt={detailProduct.title}
+                            className="w-16 h-16 object-cover rounded cursor-pointer border"
+                            onClick={() => {
+                              setCarouselImages(urls);
+                              setCarouselIndex(i);
+                              setIsImageCarouselOpen(true);
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Default text fields
+                return (
+                  <div key={key}>
+                    <strong className="capitalize">{key.replace(/_/g, ' ')}:</strong>{' '}
+                    {Array.isArray(value) ? value.join(', ') : String(value)}
+                  </div>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsDetailOpen(false)}
+              className="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </Dialog>
+
+      {/* Image Carousel Modal */}
+      <Dialog open={isImageCarouselOpen} onClose={() => setIsImageCarouselOpen(false)}>
+        <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-50" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-lg max-w-xl w-full p-6 flex flex-col items-center">
+            <img
+              src={carouselImages[carouselIndex]}
+              alt={`Image ${carouselIndex + 1}`}
+              className="max-h-[60vh] object-contain mb-4"
+            />
+            <div className="flex space-x-4 mb-4">
+              <button
+                type="button"
+                onClick={() => setCarouselIndex(prev => (prev - 1 + carouselImages.length) % carouselImages.length)}
+                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+              >
+                Prev
+              </button>
+              <button
+                type="button"
+                onClick={() => setCarouselIndex(prev => (prev + 1) % carouselImages.length)}
+                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+              >
+                Next
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsImageCarouselOpen(false)}
+              className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </Dialog>
 

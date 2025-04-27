@@ -13,7 +13,7 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  # or ["*"] to open to any origin
+    allow_origins=origins, # ← only explicitly allow http://localhost:5173
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -21,5 +21,5 @@ app.add_middleware(
 # ─────────────────────────────────────────────────────────────────────────────
 
 # mount our API routers
-app.include_router(printify_router) 
-app.include_router(template_router)
+app.include_router(printify_router, prefix="/printify")
+app.include_router(template_router, prefix="/templates")

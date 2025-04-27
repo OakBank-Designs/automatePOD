@@ -2,13 +2,19 @@ from fastapi import APIRouter, Depends, HTTPException, status, Body
 from typing import Any, List
 import os
 import httpx # type: ignore
+import openai
+import json
 
 from sqlmodel import Session # type: ignore
 from db import get_session
 from models import Product
 from services.printify_service import get_printify_catalog
+from fastapi import APIRouter
+from pydantic import BaseModel
+from typing import List, Dict
 
-router = APIRouter(prefix="/printify", tags=["Printify"])
+
+router = APIRouter(tags=["Printify"])
 
 from pydantic import BaseModel
 
@@ -77,11 +83,11 @@ async def upload_image(
 
 @router.get("/catalog")
 async def get_catalog():
-    return await get_printify_catalog()
+    return get_printify_catalog()
 
-@router.get("/catalog/{product_id}/variants")
-async def get_variants(product_id: int):
-    return await get_printify_catalog(product_id)
+# @router.get("/catalog/{product_id}/variants")
+# async def get_variants(product_id: int):
+#     return get_printify_catalog(product_id)
 
 @router.post("/create", status_code=status.HTTP_201_CREATED, response_model=Any)
 async def create_printify_product(
@@ -105,7 +111,7 @@ async def create_printify_product(
     }
 
     # 3) Forward to Printify exactly as before
-    api_key = os.getenv("PRINTIFY_API_KEY")
+    #api_key = os.getenv("PRINTIFY_API_KEY")
     #url = f"https://api.printify.com/v1/shops/{os.getenv('PRINTIFY_SHOP_ID')}/products.json"
     url = f"https://api.printify.com/v1/shops/{shop_id}/products.json"
     headers = {
@@ -118,3 +124,27 @@ async def create_printify_product(
         if resp.status_code not in (200, 201):
             raise HTTPException(resp.status_code, detail=resp.text)
         return resp.json()
+    
+
+# openai.api_key = os.getenv("OPENAI_API_KEY")
+# class ProductForCat(BaseModel):
+#     id: int
+#     title: str
+#     description: str = ""
+
+# @router.post("/classify")
+# async def classify_products(items: List[ProductForCat]) -> Dict[int, str]:
+#     # Build a prompt grouping all products, e.g.:
+#     prompt = "Classify each of these products into a single one-word category (e.g. TShirts, Hoodies, Sweatshirts, Long Sleeves, Tank Tops etc):\n\n"
+#     for p in items:
+#         prompt += f"{p.id}. {p.title} — {p.description}\n"
+#     prompt += "\nRespond as JSON mapping ids to categories, e.g.: {\"1\":\"TShirts\",\"2\":\"Bags\",…}"
+
+#     resp = await openai.ChatCompletion.acreate(
+#         model="gpt-4-0613",
+#         messages=[{"role":"user","content":prompt}],
+#         temperature=0,
+#     )
+#     content = resp.choices[0].message.content
+#     # Parse the JSON out of content
+#     return json.loads(content)

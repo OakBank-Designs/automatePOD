@@ -5,7 +5,7 @@ from typing import List
 from models import Template, TemplateCreate, TemplateRead
 from db import get_session
 
-router = APIRouter(prefix="/templates", tags=["templates"])
+router = APIRouter(tags=["templates"])
 
 @router.get("/", response_model=List[TemplateRead])
 def list_templates(*, session: Session = Depends(get_session)):
